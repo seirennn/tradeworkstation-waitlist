@@ -1,7 +1,6 @@
 'use client';
 
 import { UnicornBackground } from "@/components/UnicornBackground";
-import { supabase } from "../../lib/supabase";
 import { useState } from "react";
 import { MousePointer2 } from "lucide-react";
 
@@ -15,26 +14,25 @@ export default function Home() {
     setStatus('loading');
 
     try {
-      const { error } = await supabase
-        .from('waitlist')
-        .insert([{ email }]);
+      const response = await fetch('/api/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
 
-      if (error) {
-        if (error.code === '23505') { // Unique violation
-          setStatus('success'); // Treat duplicate as success to not discourage user
-          setMessage("You're already on the list!");
-        } else {
-          throw error;
-        }
-      } else {
-        setStatus('success');
-        setMessage("You're in! We'll be in touch.");
-        setEmail('');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Something went wrong');
       }
-    } catch (err) {
+
+      setStatus('success');
+      setMessage(data.message);
+      setEmail('');
+    } catch (err: any) {
       console.error(err);
       setStatus('error');
-      setMessage("Something went wrong. Please try again.");
+      setMessage(err.message || "Something went wrong. Please try again.");
     }
   };
 
